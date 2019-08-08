@@ -1,0 +1,2 @@
+dimen,num_bits,Interval_min,Interval_max,tamano_poblacion,prob_mutacion,seleccion_func,s,num_de_generaciones,num_de_ejecuciones
+2,8,-10,10,10,0.01,Schwefel,1.5,50,100
