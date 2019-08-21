@@ -13,16 +13,17 @@ def lee_parametros(file_datos):
     a realizar.
 
     Los keys de cada uno de los diccionarios devueltos son:
-        dimen,
-        num_bits,
-        Interval_min,
-        Interval_max,
-        tamano_poblacion,
-        prob_mutacion,
-        seleccion_func,
-        s,
-        num_de_generaciones,
-        num_de_ejecuciones
+        dimen: integer
+        num_bits: integer
+        Interval_min: float
+        Interval_max: float
+        tamano_poblacion: integer
+        prob_mutacion: float
+        seleccion_func: "Esfera" o "Schwefel"
+        gray: True o False
+        s: float
+        num_de_generaciones: integer
+        num_de_ejecuciones: integer
 
     :param file_datos: archivo .csv con los valores de los parámetros para cada experimento
     :return: lista de diccionarios ordenados

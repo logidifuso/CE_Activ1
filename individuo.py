@@ -28,6 +28,7 @@ class Individuo(object):
     xi_fin = None
     pm = None
     flag_funcion = None
+    gray = None
     s = None
     mu = None
 
@@ -116,7 +117,15 @@ class Individuo(object):
         """
         def bitarray_a_entero(cadena_bits):
             n = cadena_bits.to01()  # Convierte el bitarray a una cadena 0 y 1's
-            return int(n, 2)  # Coge la cadena como entero en base 2 y la convierte en entero
+            n = int(n, 2)
+            if Individuo.gray is True:
+                mascara = n
+                while mascara != 0:
+                    mascara >>= 1
+                    n ^= mascara
+                return n
+            else:
+                return n
 
         def f_esfera(genotipo, a1, a2, long_bits):
             tot = 0

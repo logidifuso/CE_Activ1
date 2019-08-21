@@ -8,7 +8,6 @@ import time
 import pandas as pd
 
 
-
 #####################################################################################
 #                               INICIALIZACIÓN
 #####################################################################################
@@ -188,11 +187,10 @@ def experimento(_params):
     Individuo.mu = int(_params['tamano_poblacion'])
     Individuo.pm = float(_params['prob_mutacion'])
     Individuo.flag_funcion = _params['seleccion_func']
+    Individuo.gray = _params['gray']
     Individuo.s = float(_params['s'])
 
     _fitness_optimo = params.fitness_optimo(flag_funcion, xi_inic, xi_fin, long_gen, num_genes)
-
-
 
     _experimento = []
 
@@ -251,13 +249,32 @@ l_params = params.lee_parametros("parametros.csv")
 for exper in l_params:
     result_experimento = experimento(exper)
 
-
+    nombre_exp = exper['nombre_experimento']
     tiempo_exp = result_experimento[0]
     optimo = result_experimento[1]
     AES = result_experimento[2]
     SR = result_experimento[3]
     MBF = result_experimento[4]
     datos_evolucion = result_experimento[5]
+
+    dic_result = dict(exper)
+    dic_result["tiempo"] = result_experimento[0]
+    dic_result["optimo"] = result_experimento[1]
+    dic_result["AES"] = result_experimento[2]
+    dic_result["SR"] = result_experimento[3]
+    dic_result["MBF"] = result_experimento[4]
+    # Encapsulo la lista [result_experimento[5]]  para que pandas no intente "desgranarla"
+    #temp = datos_evolucion[:, :, 2:]
+    #dic_result["datos_evolucion"] = temp.tolist()
+    #print("linea 273-borrar, los datos de evolucion son:", dic_result["datos_evolucion"])
+    print(dic_result)
+
+    # Creacción de un dataframe de pandas con toda la información del experimento
+    # y guardado en un archivo .csv
+    df = pd.DataFrame(dic_result, index=[dic_result['nombre_experimento']])
+    df.to_csv(str(dic_result['nombre_experimento'])+'.csv')
+
+
     print("El AES es:", AES)
     print("El SR es:", SR)
     print("El mejor fitness posible es:", optimo)
@@ -266,8 +283,6 @@ for exper in l_params:
     matriz_mejores = datos_evolucion[:, :, 3]
     vector_media_mejores = np.average(matriz_mejores, axis=0)
 
-
-    import matplotlib
     import matplotlib.pyplot as plt
 
     t = np.arange(0, int(exper["num_de_generaciones"])+1)
@@ -276,28 +291,46 @@ for exper in l_params:
     fig, ax = plt.subplots()
     ax1 = ax.plot(t, s)
 
-    plt.ylim([0.00307, max(vector_media_mejores)])                      #todo: el fitness optimo en lugar del numero!!
-
+    plt.ylim([0.00307, max(vector_media_mejores)])                      # todo: el fitness optimo en lugar del numero!!
 
     ax.set(xlabel='Generacion', ylabel='Valor de la función de "fitness"',
            title='Evolución del mejor individuo de la población')
     ax.grid()
 
-
     plt.show()
-pd.DataFrame()
-
-dic_result = {}
-dic_result["tiempo"] = result_experimento[0]
-dic_result["optimo"] = result_experimento[1]
-dic_result["AES"] = result_experimento[2]
-dic_result["SR"] = result_experimento[3]
-dic_result["MBF"] = result_experimento[4]
-dic_result["datos_evolucion"] = result_experimento[5]
 
 
 
+df_leido = pd.read_csv("Exper1.csv")
+df_leido = df_leido["MBF"]
+df_leido = df_leido[0]          # Importante desencapsular !!!
+print(df_leido)
+input()
 
+#datos_evolucion = np.asarray(df_leido)
+#print(datos_evolucion)
+datos_evolucion = datos_evolucion[0]
+
+
+matriz_mejores = datos_evolucion[1]
+vector_media_mejores = np.average(matriz_mejores, axis=0)
+
+# import matplotlib          #todo: quitar
+#import matplotlib.pyplot as plt
+
+t = np.arange(0, int(exper["num_de_generaciones"]) + 1)
+s = vector_media_mejores
+
+fig, ax = plt.subplots()
+ax1 = ax.plot(t, s)
+
+plt.ylim([0.00307, max(vector_media_mejores)])  # todo: el fitness optimo en lugar del numero!!
+
+ax.set(xlabel='Generacion', ylabel='Valor de la función de "fitness"',
+       title='Evolución del mejor individuo de la población')
+ax.grid()
+
+plt.show()
 
 print("Y hasta aquí llego ahora")
 
@@ -316,4 +349,3 @@ num_de_ejecuciones
 
 2,8,-10,10,10,0.01,"Esfera",1.5,50,100
 """
-
