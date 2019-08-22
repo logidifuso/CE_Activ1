@@ -1,4 +1,5 @@
 import parametros as params
+import graficos_progreso as gp
 from individuo import Individuo
 
 import numpy as np
@@ -6,15 +7,13 @@ from bitarray import bitarray
 import random
 import time
 import pandas as pd
+import json
 
 
 #####################################################################################
-#                               INICIALIZACIÓN
+#                        Definiciones Funciones principales
 #####################################################################################
-# Generación de la población inicial y la ordena de mayor
-# a menor fitness (es decir de valores de más bajos al evaluar la función
-# a valores más altos)
-# -------------------------------------------------------------------------------------
+
 def genera_genes(_long_gen, _num_genes):
     """
     Genera el material genético inicial
@@ -169,26 +168,26 @@ def nueva_generacion(_poblacion, _mu, _lambda):
 
 
 def experimento(_params):
-    # Fijación de parámetros #todo: más tarde habría que cambiar el paso a la clase individuo, para hacerlo más legible
-    num_genes = int(_params['dimen'])
-    long_gen = int(_params['num_bits'])
-    xi_inic = float(_params['Interval_min'])
-    xi_fin = float(_params['Interval_max'])
-    mu = int(_params['tamano_poblacion'])
+    # Fijación de parámetros
+    num_genes = _params['dimen']
+    long_gen = _params['num_bits']
+    xi_inic = _params['Interval_min']
+    xi_fin = _params['Interval_max']
+    mu = _params['tamano_poblacion']
     flag_funcion = _params['seleccion_func']
-    numero_de_generaciones = int(_params['num_de_generaciones'])
-    numero_de_ejecuciones = int(_params['num_de_ejecuciones'])
+    numero_de_generaciones = _params['num_de_generaciones']
+    numero_de_ejecuciones = _params['num_de_ejecuciones']
 
     # Pasa los parámetros del experimento actual a la clase Individuo
-    Individuo.num_genes = int(_params['dimen'])
-    Individuo.long_gen = int(_params['num_bits'])
-    Individuo.xi_inic = float(_params['Interval_min'])
-    Individuo.xi_fin = float(_params['Interval_max'])
-    Individuo.mu = int(_params['tamano_poblacion'])
-    Individuo.pm = float(_params['prob_mutacion'])
+    Individuo.num_genes = num_genes
+    Individuo.long_gen = long_gen
+    Individuo.xi_inic = xi_inic
+    Individuo.xi_fin = xi_fin
+    Individuo.mu = mu
+    Individuo.pm = _params['prob_mutacion']
     Individuo.flag_funcion = _params['seleccion_func']
     Individuo.gray = _params['gray']
-    Individuo.s = float(_params['s'])
+    Individuo.s = _params['s']
 
     _fitness_optimo = params.fitness_optimo(flag_funcion, xi_inic, xi_fin, long_gen, num_genes)
 
@@ -225,28 +224,33 @@ def experimento(_params):
     _SR = (100 * _SR) / numero_de_ejecuciones
     _experimento = np.asarray(_experimento)
     for _i in range(numero_de_ejecuciones):
-        _MBF += _experimento[_i, numero_de_generaciones - 1, 3]
+        _MBF += _experimento[_i, numero_de_generaciones, 3]
     _MBF /= numero_de_ejecuciones
     tiempo = end - start
-
-    # A continuación imprimimos los resultados #todo: esto se puede eliminar
-    """
-    print("Tiempo requerido: %s" % tiempo)
-    print("\nNumero de ""runs"": ", numero_de_ejecuciones)
-    print("Usando como criterio de exito un valor de fitness máximo =", _fitness_optimo)
-    print("El AES obtenido es:", _AES)
-    print("El SR (Success Rate) obtenido es: " + str(_SR) + "%")
-    print("El MBF obtenido es: ", _MBF)
-    input("Pulsa Enter para continuar...")
-    """
 
     return tiempo, _fitness_optimo, _AES, _SR, _MBF, _experimento
 
 
+#####################################################################################
+#                               Rutina principal
+#####################################################################################
+
+
 l_params = params.lee_parametros("parametros.csv")
 
-
 for exper in l_params:
+
+    # Typecasting: El módulo csv devuelve strings, por tanto hay que convertir los tipos manualmente
+    exper['dimen'] = int(exper['dimen'])
+    exper['num_bits'] = int(exper['num_bits'])
+    exper['Interval_min'] = float(exper['Interval_min'])
+    exper['Interval_max'] = float(exper['Interval_max'])
+    exper['tamano_poblacion'] = int(exper['tamano_poblacion'])
+    exper['prob_mutacion'] = float(exper['prob_mutacion'])
+    exper['s'] = float(exper['s'])
+    exper['num_de_generaciones'] = int(exper['num_de_generaciones'])
+    exper['num_de_ejecuciones'] = int(exper['num_de_ejecuciones'])
+
     result_experimento = experimento(exper)
 
     nombre_exp = exper['nombre_experimento']
@@ -263,16 +267,43 @@ for exper in l_params:
     dic_result["AES"] = result_experimento[2]
     dic_result["SR"] = result_experimento[3]
     dic_result["MBF"] = result_experimento[4]
-    # Encapsulo la lista [result_experimento[5]]  para que pandas no intente "desgranarla"
-    #temp = datos_evolucion[:, :, 2:]
-    #dic_result["datos_evolucion"] = temp.tolist()
-    #print("linea 273-borrar, los datos de evolucion son:", dic_result["datos_evolucion"])
-    print(dic_result)
+    # Selección de los valores: media_fitness, mejor, peor y desviación para grabar
+    dic_result["datos_evolucion"] = result_experimento[5][:, :, 2:].tolist()
+
+    #####################################################################################
+    #                       Guardado de los resultados y gráficas
+    #####################################################################################
 
     # Creacción de un dataframe de pandas con toda la información del experimento
     # y guardado en un archivo .csv
-    df = pd.DataFrame(dic_result, index=[dic_result['nombre_experimento']])
-    df.to_csv(str(dic_result['nombre_experimento'])+'.csv')
+    nombre_fichero_resultados = "".join(["./resultados/",
+                                         str(dic_result['nombre_experimento'])
+                                         ])
+
+    df = pd.DataFrame(dic_result)
+    df.to_csv(nombre_fichero_resultados + '.csv')
+
+    # Guardado de los resultados del experimento en un archivo .json
+    with open(nombre_fichero_resultados + '.json', 'w') as outfile:
+        json.dump(dic_result, outfile)
+
+    # #############################   Gráficas ####################################
+
+    # matriz_mejores = datos_evolucion[:, :, 3]
+    # v_media_mejores = np.average(matriz_mejores, axis=0)
+    v_media_medias = np.average(datos_evolucion[:, :, 2], axis=0)
+    v_media_mejores = np.average(datos_evolucion[:, :, 3], axis=0)
+    v_media_peores = np.average(datos_evolucion[:, :, 4], axis=0)
+
+    gp.graf_medias_fitness_por_generacion(exper['num_de_generaciones']+1,
+                                          v_media_medias,
+                                          v_media_mejores,
+                                          v_media_peores)
+
+    gp.graf_mejor_fitness_por_generacion(exper['num_de_generaciones']+1,
+                                         exper['num_de_ejecuciones'],
+                                         exper['prob_mutacion'],
+                                         datos_evolucion)
 
 
     print("El AES es:", AES)
@@ -280,6 +311,10 @@ for exper in l_params:
     print("El mejor fitness posible es:", optimo)
     print("El MBF es:", MBF)
 
+    """
+    
+    
+    # Gráfica con la media del mejor fitness (MBF por generación)
     matriz_mejores = datos_evolucion[:, :, 3]
     vector_media_mejores = np.average(matriz_mejores, axis=0)
 
@@ -296,43 +331,9 @@ for exper in l_params:
     ax.set(xlabel='Generacion', ylabel='Valor de la función de "fitness"',
            title='Evolución del mejor individuo de la población')
     ax.grid()
-
     plt.show()
+    """
 
-
-
-df_leido = pd.read_csv("Exper1.csv")
-df_leido = df_leido["MBF"]
-df_leido = df_leido[0]          # Importante desencapsular !!!
-print(df_leido)
-input()
-
-#datos_evolucion = np.asarray(df_leido)
-#print(datos_evolucion)
-datos_evolucion = datos_evolucion[0]
-
-
-matriz_mejores = datos_evolucion[1]
-vector_media_mejores = np.average(matriz_mejores, axis=0)
-
-# import matplotlib          #todo: quitar
-#import matplotlib.pyplot as plt
-
-t = np.arange(0, int(exper["num_de_generaciones"]) + 1)
-s = vector_media_mejores
-
-fig, ax = plt.subplots()
-ax1 = ax.plot(t, s)
-
-plt.ylim([0.00307, max(vector_media_mejores)])  # todo: el fitness optimo en lugar del numero!!
-
-ax.set(xlabel='Generacion', ylabel='Valor de la función de "fitness"',
-       title='Evolución del mejor individuo de la población')
-ax.grid()
-
-plt.show()
-
-print("Y hasta aquí llego ahora")
 
 """
 dimen,
