@@ -1,0 +1,3 @@
+nombre_experimento,dimen,num_bits,Interval_min,Interval_max,tamano_poblacion,prob_mutacion,seleccion_func,gray,s,num_de_generaciones,num_de_ejecuciones
+Exper_test2,2,8,-500,500,50,0.05,Schwefel,True, 1.5,50,"3
+"

@@ -8,7 +8,7 @@ import random
 import time
 import pandas as pd
 import json
-
+import argparse
 
 #####################################################################################
 #                        Definiciones Funciones principales
@@ -236,8 +236,22 @@ def experimento(_params):
 #####################################################################################
 
 
-l_params = params.lee_parametros("parametros.csv")
+# ______________ Parseado del fichero de parámetros y lectura ______________________
+# Parseado
+parser = argparse.ArgumentParser()
+parser.add_argument("-csv_params", "--csv_params",
+                    type=str, help="Ruta y fichero de parámetros. Formato .csv")
+args = parser.parse_args()
+if args.csv_params is not None:
+    direccion = args.csv_params
+    print(direccion)
+else:
+    direccion = "parametros.csv"
 
+# Lectura
+l_params = params.lee_parametros(direccion)
+
+# _______________________  Ejecucion del experimento  ______________________________
 for exper in l_params:
 
     # Typecasting: El módulo csv devuelve strings, por tanto hay que convertir los tipos manualmente
@@ -304,7 +318,6 @@ for exper in l_params:
                                          exper['num_de_ejecuciones'],
                                          exper['prob_mutacion'],
                                          datos_evolucion)
-
 
     print("El AES es:", AES)
     print("El SR es:", SR)
